@@ -1,0 +1,47 @@
+{
+    "name": "hiblaphp/cancellation",
+    "description": "Abstraction for C# inspired Cancellation Token Source Implementation for PHP",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Hibla\\Cancellation\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Reymart A. Calicdan",
+            "email": "reymart.calicdan06@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "hiblaphp/event-loop": "dev-main",
+        "hiblaphp/promise": "dev-main"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "laravel/pint": "^1.25",
+        "mockery/mockery": "^1.6"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "analyze": "./vendor/bin/phpstan analyse",
+        "format": "./vendor/bin/pint",
+        "format-test": "./vendor/bin/pint --test",
+        "test": "./vendor/bin/pest"
+    }
+}
