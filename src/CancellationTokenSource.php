@@ -12,19 +12,20 @@ final class CancellationTokenSource
 {
     private CancellationToken $token;
     private CancellationTokenState $state;
+    private ?string $timerId = null;
 
     /**
      * Create a new CancellationTokenSource.
-     * 
+     *
      * @param float|null $timeoutSeconds Optional timeout in seconds. If provided,
      *                                    the source will automatically cancel after
      *                                    this duration.
-     * 
+     *
      * @example
      * ```php
      * // No timeout
      * $cts = new CancellationTokenSource();
-     * 
+     *
      * // With 5 second timeout
      * $cts = new CancellationTokenSource(5.0);
      * ```
@@ -41,10 +42,10 @@ final class CancellationTokenSource
 
     /**
      * Get the token associated with this source.
-     * 
+     *
      * Multiple calls return the same token instance. The token allows
      * operations to monitor for cancellation requests.
-     * 
+     *
      * @return CancellationToken The cancellation token
      */
     public function token(): CancellationToken
@@ -54,15 +55,15 @@ final class CancellationTokenSource
 
     /**
      * Request cancellation of all operations using this source's token.
-     * 
+     *
      * This method:
      * 1. Marks the token as cancelled
      * 2. Invokes all registered callbacks (for cleanup operations)
      * 3. Cancels all tracked promises
      * 4. Cancels any pending timeout timer
-     * 
+     *
      * Calling `cancel()` multiple times is safe - subsequent calls have no effect.
-     * 
+     *
      * @throws \Throwable If any callback or promise cancellation throws an exception
      * @throws AggregateErrorException If multiple exceptions occur during cancellation
      */
@@ -73,6 +74,11 @@ final class CancellationTokenSource
         }
 
         $this->state->cancelled = true;
+
+        if ($this->timerId !== null) {
+            Loop::cancelTimer($this->timerId);
+            $this->timerId = null;
+        }
 
         $exceptions = [];
 
@@ -92,7 +98,7 @@ final class CancellationTokenSource
         $this->state->promiseKeyMap = [];
 
         foreach ($promises as $promise) {
-            if (!$promise->isSettled() && !$promise->isCancelled()) {
+            if (! $promise->isSettled() && ! $promise->isCancelled()) {
                 try {
                     $promise->cancel();
                 } catch (\Throwable $e) {
@@ -106,24 +112,24 @@ final class CancellationTokenSource
 
     /**
      * Schedule automatic cancellation after a specified duration.
-     * 
+     *
      * This method allows you to set or reset the cancellation timeout dynamically.
      * If called multiple times, subsequent calls will reset the timer (cancelling
      * the previous timer if the source hasn't been cancelled yet).
-     * 
+     *
      * This is a convenient way to implement timeouts. The source will
      * automatically call `cancel()` after the specified time elapses.
-     * 
+     *
      * @param float $seconds Number of seconds until automatic cancellation
-     * 
+     *
      * @example
      * ```php
      * $cts = new CancellationTokenSource();
      * $cts->cancelAfter(5.0); // Cancel after 5 seconds
-     * 
+     *
      * // Later, reset the timeout
      * $cts->cancelAfter(10.0); // Now cancels after 10 seconds instead
-     * 
+     *
      * $promise = longRunningOperation($cts->token());
      * ```
      */
@@ -133,11 +139,18 @@ final class CancellationTokenSource
             return;
         }
 
+        // Cancel the previous timer if it exists
+        if ($this->timerId !== null) {
+            Loop::cancelTimer($this->timerId);
+            $this->timerId = null;
+        }
+
         $weakThis = \WeakReference::create($this);
 
-        Loop::addTimer($seconds, function () use ($weakThis) {
+        $this->timerId = Loop::addTimer($seconds, function () use ($weakThis) {
             $source = $weakThis->get();
             if ($source !== null) {
+                $source->timerId = null; // Clear the ID since timer fired
                 $source->cancel();
             }
         });
@@ -145,29 +158,29 @@ final class CancellationTokenSource
 
     /**
      * Create a linked cancellation token source that cancels when ANY source token cancels.
-     * 
+     *
      * This is useful for combining multiple cancellation sources (user cancellation,
      * timeout, system shutdown, etc.) into a single token. The returned source will
      * automatically cancel if any of the input tokens are cancelled.
-     * 
+     *
      * **Use Cases:**
      * - Combine user cancellation with timeout
      * - Coordinate cancellation across multiple operations
      * - Create fallback cancellation strategies
-     * 
+     *
      * @param CancellationToken ...$tokens One or more source tokens to link
      * @return self A new source that cancels when any input token cancels
-     * 
+     *
      * @example
      * ```php
      * $userCts = new CancellationTokenSource();
      * $timeoutCts = new CancellationTokenSource(10.0);
-     * 
+     *
      * $linkedCts = CancellationTokenSource::createLinkedTokenSource(
      *     $userCts->token(),
      *     $timeoutCts->token()
      * );
-     * 
+     *
      * // Operation cancels if user cancels OR timeout expires
      * doWork($linkedCts->token());
      * ```
@@ -183,6 +196,7 @@ final class CancellationTokenSource
         foreach ($tokens as $token) {
             if ($token->isCancelled()) {
                 $linkedSource->cancel();
+
                 return $linkedSource;
             }
         }
@@ -206,6 +220,11 @@ final class CancellationTokenSource
      */
     private function cleanup(): void
     {
+        if ($this->timerId !== null) {
+            Loop::cancelTimer($this->timerId);
+            $this->timerId = null;
+        }
+
         $this->state->callbacks = [];
         $this->state->trackedPromises = [];
         $this->state->promiseKeyMap = [];
@@ -224,7 +243,7 @@ final class CancellationTokenSource
             $errorMessages = [];
             foreach ($exceptions as $index => $exception) {
                 $errorMessages[] = \sprintf(
-                    "#%d: [%s] %s in %s:%d",
+                    '#%d: [%s] %s in %s:%d',
                     $index + 1,
                     \get_class($exception),
                     $exception->getMessage(),

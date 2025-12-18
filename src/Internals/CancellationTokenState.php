@@ -27,8 +27,8 @@ final class CancellationTokenState
     public array $promiseKeyMap = [];
 
     public int $nextPromiseKey = 0;
-    
+
     public int $nextCallbackId = 0;
-    
+
     public bool $cancelled = false;
 }
