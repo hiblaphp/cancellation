@@ -9,7 +9,7 @@ use Hibla\Cancellation\Internals\CancellationTokenState;
 use Hibla\Promise\Exceptions\PromiseCancelledException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 
-final class CancellationToken
+final readonly class CancellationToken
 {
     /**
      * @internal Only CancellationTokenSource should create tokens
@@ -175,7 +175,7 @@ final class CancellationToken
      * @example
      * ```php
      * $cts = new CancellationTokenSource();
-     * $token = $cts->token();
+     * $token = $cts->token;
      *
      * $promise1 = $token->track(asyncOperation1());
      * $promise2 = $token->track(asyncOperation2());

@@ -12,14 +12,14 @@ describe('CancellationToken', function () {
     describe('Basic State Management', function () {
         it('starts in uncancelled state', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             expect($token->isCancelled())->toBeFalse();
         });
 
         it('transitions to cancelled state when source is cancelled', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $cts->cancel();
 
@@ -28,7 +28,7 @@ describe('CancellationToken', function () {
 
         it('remains cancelled after multiple cancel calls', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $cts->cancel();
             $cts->cancel();
@@ -64,7 +64,7 @@ describe('CancellationToken', function () {
     describe('Promise Tracking', function () {
         it('tracks a pending promise', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $promise = new Promise(function () {
                 // Never settles
             });
@@ -76,7 +76,7 @@ describe('CancellationToken', function () {
 
         it('tracks multiple promises', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise1 = new Promise(function () {});
             $promise2 = new Promise(function () {});
@@ -91,7 +91,7 @@ describe('CancellationToken', function () {
 
         it('does not track already settled promise', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $promise = Promise::resolved('value');
 
             $token->track($promise);
@@ -101,7 +101,7 @@ describe('CancellationToken', function () {
 
         it('cancels tracked promise when token is cancelled', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $promise = new Promise(function () {});
 
             $token->track($promise);
@@ -115,7 +115,7 @@ describe('CancellationToken', function () {
 
         it('cancels all tracked promises', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise1 = new Promise(function () {});
             $promise2 = new Promise(function () {});
@@ -135,7 +135,7 @@ describe('CancellationToken', function () {
 
         it('immediately cancels promise if token already cancelled', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $cts->cancel();
 
             $promise = new Promise(function () {});
@@ -146,7 +146,7 @@ describe('CancellationToken', function () {
 
         it('automatically untracks promise when it resolves', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise = new Promise(function ($resolve) {
                 Loop::defer(function () use ($resolve) {
@@ -165,7 +165,7 @@ describe('CancellationToken', function () {
 
         it('automatically untracks promise when it rejects', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise = new Promise(function ($resolve, $reject) {
                 Loop::nextTick(function () use ($reject) {
@@ -190,7 +190,7 @@ describe('CancellationToken', function () {
 
         it('manually untracks a specific promise', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise1 = new Promise(function () {});
             $promise2 = new Promise(function () {});
@@ -212,7 +212,7 @@ describe('CancellationToken', function () {
 
         it('clears all tracked promises without cancelling them', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise1 = new Promise(function () {});
             $promise2 = new Promise(function () {});
@@ -238,7 +238,7 @@ describe('CancellationToken', function () {
 
         it('tracks the same promise multiple times', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $promise = new Promise(function () {});
 
             $token->track($promise);
@@ -254,7 +254,7 @@ describe('CancellationToken', function () {
 
         it('does not track settled promises', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $resolved = Promise::resolved('value');
             $rejected = Promise::rejected(new RuntimeException('error'));
@@ -270,7 +270,7 @@ describe('CancellationToken', function () {
     describe('Cancellation Callbacks', function () {
         it('executes callback when cancelled', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $called = false;
 
             $token->onCancel(function () use (&$called) {
@@ -286,7 +286,7 @@ describe('CancellationToken', function () {
 
         it('executes multiple callbacks in registration order', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $order = [];
 
             $token->onCancel(function () use (&$order) {
@@ -308,7 +308,7 @@ describe('CancellationToken', function () {
 
         it('immediately executes callback if already cancelled', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $cts->cancel();
 
             $called = false;
@@ -322,7 +322,7 @@ describe('CancellationToken', function () {
 
         it('does not execute callback multiple times on repeated cancels', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $count = 0;
 
             $token->onCancel(function () use (&$count) {
@@ -338,7 +338,7 @@ describe('CancellationToken', function () {
 
         it('allows callbacks to access token state', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $tokenWasCancelled = null;
 
             $token->onCancel(function () use ($token, &$tokenWasCancelled) {
@@ -352,7 +352,7 @@ describe('CancellationToken', function () {
 
         it('returns a registration that can be disposed', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $called = false;
 
             $registration = $token->onCancel(function () use (&$called) {
@@ -371,7 +371,7 @@ describe('CancellationToken', function () {
 
         it('disposes registration automatically after callback execution', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $registration = $token->onCancel(function () {});
 
@@ -386,7 +386,7 @@ describe('CancellationToken', function () {
     describe('throwIfCancelled()', function () {
         it('throws exception when cancelled', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $cts->cancel();
 
             expect(fn () => $token->throwIfCancelled())
@@ -396,7 +396,7 @@ describe('CancellationToken', function () {
 
         it('does not throw when not cancelled', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $token->throwIfCancelled();
 
@@ -405,7 +405,7 @@ describe('CancellationToken', function () {
 
         it('can be called multiple times', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $token->throwIfCancelled();
             $token->throwIfCancelled();
@@ -422,7 +422,7 @@ describe('CancellationToken', function () {
     describe('Promise Chain Cancellation', function () {
         it('cancels child promises in chain', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise = new Promise(function () {});
             $child = $promise->then(function ($value) {
@@ -439,7 +439,7 @@ describe('CancellationToken', function () {
 
         it('cancels multiple levels of promise chains', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise = new Promise(function () {});
             $child1 = $promise->then(fn ($v) => $v);
@@ -459,7 +459,7 @@ describe('CancellationToken', function () {
 
         it('does not affect already settled chain members', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $promise = Promise::resolved(10);
             $child = $promise->then(function ($value) {
@@ -481,7 +481,7 @@ describe('CancellationToken', function () {
     describe('Edge Cases and Error Handling', function () {
         it('handles tracking null promise gracefully', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             expect(fn () => $token->untrack(new Promise(fn () => null)))
                 ->not->toThrow(Throwable::class)
@@ -490,7 +490,7 @@ describe('CancellationToken', function () {
 
         it('handles untracking non-tracked promise', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
             $promise = new Promise(function () {});
 
             expect(fn () => $token->untrack($promise))
@@ -500,7 +500,7 @@ describe('CancellationToken', function () {
 
         it('handles clearing empty tracked list', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             expect(fn () => $token->clearTracked())
                 ->not->toThrow(Throwable::class)
@@ -509,7 +509,7 @@ describe('CancellationToken', function () {
 
         it('maintains tracked count accuracy with mixed operations', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $p1 = new Promise(function () {});
             $p2 = new Promise(function () {});
@@ -535,7 +535,7 @@ describe('CancellationToken', function () {
     describe('Integration with Promise Static Methods', function () {
         it('works with Promise::race()', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $slow = new Promise(function ($resolve) use ($token) {
                 $token->onCancel(function () use ($resolve) {
@@ -555,7 +555,7 @@ describe('CancellationToken', function () {
 
         it('works with Promise::all()', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $p1 = Promise::resolved(1);
             $p2 = Promise::resolved(2);
@@ -578,7 +578,7 @@ describe('CancellationToken', function () {
 
         it('works with Promise::allSettled()', function () {
             $cts = new CancellationTokenSource();
-            $token = $cts->token();
+            $token = $cts->token;
 
             $p1 = Promise::resolved(1);
             $p2 = Promise::rejected(new RuntimeException('error'));

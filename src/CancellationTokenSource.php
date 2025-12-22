@@ -10,8 +10,18 @@ use Hibla\Promise\Exceptions\AggregateErrorException;
 
 final class CancellationTokenSource
 {
-    private CancellationToken $token;
-    private CancellationTokenState $state;
+    /**
+     * Get the token associated with this source.
+     *
+     * Multiple calls return the same token instance. The token allows
+     * operations to monitor for cancellation requests.
+     *
+     * @return CancellationToken The cancellation token
+     */
+    public readonly CancellationToken $token;
+
+    private readonly CancellationTokenState $state;
+
     private ?string $timerId = null;
 
     /**
@@ -38,19 +48,6 @@ final class CancellationTokenSource
         if ($timeoutSeconds !== null) {
             $this->cancelAfter($timeoutSeconds);
         }
-    }
-
-    /**
-     * Get the token associated with this source.
-     *
-     * Multiple calls return the same token instance. The token allows
-     * operations to monitor for cancellation requests.
-     *
-     * @return CancellationToken The cancellation token
-     */
-    public function token(): CancellationToken
-    {
-        return $this->token;
     }
 
     /**
@@ -130,7 +127,7 @@ final class CancellationTokenSource
      * // Later, reset the timeout
      * $cts->cancelAfter(10.0); // Now cancels after 10 seconds instead
      *
-     * $promise = longRunningOperation($cts->token());
+     * $promise = longRunningOperation($cts->token);
      * ```
      */
     public function cancelAfter(float $seconds): void
@@ -177,12 +174,12 @@ final class CancellationTokenSource
      * $timeoutCts = new CancellationTokenSource(10.0);
      *
      * $linkedCts = CancellationTokenSource::createLinkedTokenSource(
-     *     $userCts->token(),
-     *     $timeoutCts->token()
+     *     $userCts->token,
+     *     $timeoutCts->token
      * );
      *
      * // Operation cancels if user cancels OR timeout expires
-     * doWork($linkedCts->token());
+     * doWork($linkedCts->token);
      * ```
      */
     public static function createLinkedTokenSource(CancellationToken ...$tokens): self
