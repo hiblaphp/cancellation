@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Hibla\Cancellation\CancellationToken;
 use Hibla\Cancellation\CancellationTokenSource;
 use Hibla\EventLoop\Loop;
-use Hibla\Promise\Exceptions\PromiseCancelledException;
+use Hibla\Promise\Exceptions\CancelledException;
 use Hibla\Promise\Promise;
 
 describe('CancellationToken', function () {
@@ -390,7 +390,7 @@ describe('CancellationToken', function () {
             $cts->cancel();
 
             expect(fn () => $token->throwIfCancelled())
-                ->toThrow(PromiseCancelledException::class, 'Operation was cancelled')
+                ->toThrow(CancelledException::class, 'Operation was cancelled')
             ;
         });
 
@@ -414,7 +414,7 @@ describe('CancellationToken', function () {
             $cts->cancel();
 
             expect(fn () => $token->throwIfCancelled())
-                ->toThrow(PromiseCancelledException::class)
+                ->toThrow(CancelledException::class)
             ;
         });
     });

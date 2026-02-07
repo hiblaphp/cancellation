@@ -6,7 +6,7 @@ namespace Hibla\Cancellation;
 
 use Hibla\Cancellation\Internals\CancellationTokenRegistration;
 use Hibla\Cancellation\Internals\CancellationTokenState;
-use Hibla\Promise\Exceptions\PromiseCancelledException;
+use Hibla\Promise\Exceptions\CancelledException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 
 final readonly class CancellationToken
@@ -18,7 +18,8 @@ final readonly class CancellationToken
      */
     public function __construct(
         private CancellationTokenState $state
-    ) {}
+    ) {
+    }
 
     /**
      * Get a token that can never be cancelled.
@@ -77,7 +78,7 @@ final readonly class CancellationToken
      * Place strategic calls to this method at points where it's safe to
      * stop the operation.
      *
-     * @throws PromiseCancelledException If cancellation was requested
+     * @throws CancelledException If cancellation was requested
      *
      * @example
      * ```php
@@ -93,7 +94,7 @@ final readonly class CancellationToken
     public function throwIfCancelled(): void
     {
         if ($this->state->cancelled) {
-            throw new PromiseCancelledException('Operation was cancelled');
+            throw new CancelledException('Operation was cancelled');
         }
     }
 
