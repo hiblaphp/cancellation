@@ -98,6 +98,19 @@ describe('CancellationTokenSource', function () {
             expect($promise2->isCancelled())->toBeTrue();
         });
 
+        it('only cancels tracked promise forward — does not walk up to root', function () {
+            $cts = new CancellationTokenSource();
+
+            $root  = new Promise(function () {});
+            $child = $root->then(fn ($v) => $v);
+
+            $cts->token->track($child);
+            $cts->cancel();
+
+            expect($child->isCancelled())->toBeTrue();
+            expect($root->isCancelled())->toBeFalse(); // root untouched ← key assertion
+        });
+
         it('throws single exception from callback', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
@@ -156,6 +169,202 @@ describe('CancellationTokenSource', function () {
             }
 
             expect($state['executed'])->toBe([1, 2, 3]);
+        });
+    });
+
+    describe('cancelChain()', function () {
+        it('cancels the token', function () {
+            $cts = new CancellationTokenSource();
+
+            expect($cts->token->isCancelled())->toBeFalse();
+
+            $cts->cancelChain();
+
+            expect($cts->token->isCancelled())->toBeTrue();
+        });
+
+        it('is idempotent', function () {
+            $cts = new CancellationTokenSource();
+
+            $cts->cancelChain();
+            $cts->cancelChain();
+            $cts->cancelChain();
+
+            expect($cts->token->isCancelled())->toBeTrue();
+        });
+
+        it('executes all registered callbacks', function () {
+            $cts = new CancellationTokenSource();
+            $token = $cts->token;
+            $state = ['order' => []];
+
+            $token->onCancel(function () use (&$state) {
+                $state['order'][] = 1;
+            });
+
+            $token->onCancel(function () use (&$state) {
+                $state['order'][] = 2;
+            });
+
+            $token->onCancel(function () use (&$state) {
+                $state['order'][] = 3;
+            });
+
+            $cts->cancelChain();
+
+            expect($state['order'])->toBe([1, 2, 3]);
+        });
+
+        it('walks up to root and cancels the entire chain', function () {
+            $cts = new CancellationTokenSource();
+
+            $root  = new Promise(function () {});
+            $child = $root->then(fn ($v) => $v);
+
+            $cts->token->track($child);
+            $cts->cancelChain();
+ 
+            expect($child->isCancelled())->toBeTrue();
+            expect($root->isCancelled())->toBeTrue(); 
+        });
+
+        it('walks up through deep chain to root', function () {
+            $cts = new CancellationTokenSource();
+
+            $root        = new Promise(function () {});
+            $child       = $root->then(fn ($v) => $v);
+            $grandchild  = $child->then(fn ($v) => $v);
+
+            $cts->token->track($grandchild);
+            $cts->cancelChain();
+
+            expect($grandchild->isCancelled())->toBeTrue();
+            expect($child->isCancelled())->toBeTrue();
+            expect($root->isCancelled())->toBeTrue();
+        });
+
+        it('fires root onCancel() handler via chain propagation', function () {
+            $cts = new CancellationTokenSource();
+            $state = ['rootCleanedUp' => false];
+
+            $root = new Promise(function () {});
+            $root->onCancel(function () use (&$state) {
+                $state['rootCleanedUp'] = true; 
+            });
+
+            $child = $root->then(fn ($v) => $v);
+
+            $cts->token->track($child);
+            $cts->cancelChain();
+
+            expect($state['rootCleanedUp'])->toBeTrue(); 
+        });
+
+        it('cancels multiple tracked promises via chain', function () {
+            $cts = new CancellationTokenSource();
+
+            $root1  = new Promise(function () {});
+            $child1 = $root1->then(fn ($v) => $v);
+
+            $root2  = new Promise(function () {});
+            $child2 = $root2->then(fn ($v) => $v);
+
+            $cts->token->track($child1);
+            $cts->token->track($child2);
+
+            $cts->cancelChain();
+
+            expect($child1->isCancelled())->toBeTrue();
+            expect($root1->isCancelled())->toBeTrue();
+            expect($child2->isCancelled())->toBeTrue();
+            expect($root2->isCancelled())->toBeTrue();
+        });
+
+        it('does not affect untracked promises', function () {
+            $cts = new CancellationTokenSource();
+
+            $tracked   = new Promise(function () {});
+            $untracked = new Promise(function () {});
+
+            $cts->token->track($tracked);
+            $cts->cancelChain();
+
+            expect($tracked->isCancelled())->toBeTrue();
+            expect($untracked->isCancelled())->toBeFalse(); 
+        });
+
+        it('throws single exception from callback', function () {
+            $cts = new CancellationTokenSource();
+
+            $cts->token->onCancel(function () {
+                throw new RuntimeException('Callback error');
+            });
+
+            expect(fn () => $cts->cancelChain())
+                ->toThrow(RuntimeException::class, 'Callback error')
+            ;
+        });
+
+        it('throws AggregateErrorException for multiple callback errors', function () {
+            $cts = new CancellationTokenSource();
+
+            $cts->token->onCancel(function () {
+                throw new RuntimeException('Error 1');
+            });
+
+            $cts->token->onCancel(function () {
+                throw new RuntimeException('Error 2');
+            });
+
+            expect(fn () => $cts->cancelChain())
+                ->toThrow(AggregateErrorException::class)
+            ;
+        });
+
+        it('continues executing callbacks even if some throw', function () {
+            $cts = new CancellationTokenSource();
+            $state = ['executed' => []];
+
+            $cts->token->onCancel(function () use (&$state) {
+                $state['executed'][] = 1;
+
+                throw new RuntimeException('Error 1');
+            });
+
+            $cts->token->onCancel(function () use (&$state) {
+                $state['executed'][] = 2;
+            });
+
+            $cts->token->onCancel(function () use (&$state) {
+                $state['executed'][] = 3;
+
+                throw new RuntimeException('Error 2');
+            });
+
+            try {
+                $cts->cancelChain();
+            } catch (AggregateErrorException $e) {
+                // Expected
+            }
+
+            expect($state['executed'])->toBe([1, 2, 3]);
+        });
+
+        it('behaves identically to cancel() when tracking root promises directly', function () {
+            $cts1 = new CancellationTokenSource();
+            $cts2 = new CancellationTokenSource();
+
+            $root1 = new Promise(function () {});
+            $root2 = new Promise(function () {});
+
+            $cts1->token->track($root1);
+            $cts2->token->track($root2);
+
+            $cts1->cancel();
+            $cts2->cancelChain();
+
+            expect($root1->isCancelled())->toBeTrue();
+            expect($root2->isCancelled())->toBeTrue();
         });
     });
 
