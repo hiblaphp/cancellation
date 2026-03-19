@@ -31,4 +31,6 @@ final class CancellationTokenState
     public int $nextCallbackId = 0;
 
     public bool $cancelled = false;
+
+    public bool $neverCancels = false;
 }

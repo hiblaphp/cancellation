@@ -43,8 +43,11 @@ final readonly class CancellationToken
     {
         /** @var self|null $noneToken */
         static $noneToken = null;
+
         if ($noneToken === null) {
-            $noneToken = new self(new CancellationTokenState());
+            $state = new CancellationTokenState();
+            $state->neverCancels = true;
+            $noneToken = new self($state);
         }
 
         return $noneToken;
@@ -147,11 +150,14 @@ final readonly class CancellationToken
     {
         if ($this->state->cancelled) {
             $callback();
-
             $dummyState = new CancellationTokenState();
             $dummyState->cancelled = true;
 
             return new CancellationTokenRegistration($dummyState, -1);
+        }
+
+        if ($this->state->neverCancels) {
+            return new CancellationTokenRegistration(new CancellationTokenState(), -1);
         }
 
         $callbackId = $this->state->nextCallbackId++;
@@ -196,6 +202,10 @@ final readonly class CancellationToken
                 $promise->cancel();
             }
 
+            return $promise;
+        }
+
+        if ($this->state->neverCancels) {
             return $promise;
         }
 

@@ -86,8 +86,10 @@ describe('CancellationTokenSource', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise1 = new Promise(function () {});
-            $promise2 = new Promise(function () {});
+            $promise1 = new Promise(function () {
+            });
+            $promise2 = new Promise(function () {
+            });
 
             $token->track($promise1);
             $token->track($promise2);
@@ -101,7 +103,8 @@ describe('CancellationTokenSource', function () {
         it('only cancels tracked promise forward — does not walk up to root', function () {
             $cts = new CancellationTokenSource();
 
-            $root  = new Promise(function () {});
+            $root = new Promise(function () {
+            });
             $child = $root->then(fn ($v) => $v);
 
             $cts->token->track($child);
@@ -218,22 +221,24 @@ describe('CancellationTokenSource', function () {
         it('walks up to root and cancels the entire chain', function () {
             $cts = new CancellationTokenSource();
 
-            $root  = new Promise(function () {});
+            $root = new Promise(function () {
+            });
             $child = $root->then(fn ($v) => $v);
 
             $cts->token->track($child);
             $cts->cancelChain();
- 
+
             expect($child->isCancelled())->toBeTrue();
-            expect($root->isCancelled())->toBeTrue(); 
+            expect($root->isCancelled())->toBeTrue();
         });
 
         it('walks up through deep chain to root', function () {
             $cts = new CancellationTokenSource();
 
-            $root        = new Promise(function () {});
-            $child       = $root->then(fn ($v) => $v);
-            $grandchild  = $child->then(fn ($v) => $v);
+            $root = new Promise(function () {
+            });
+            $child = $root->then(fn ($v) => $v);
+            $grandchild = $child->then(fn ($v) => $v);
 
             $cts->token->track($grandchild);
             $cts->cancelChain();
@@ -247,9 +252,10 @@ describe('CancellationTokenSource', function () {
             $cts = new CancellationTokenSource();
             $state = ['rootCleanedUp' => false];
 
-            $root = new Promise(function () {});
+            $root = new Promise(function () {
+            });
             $root->onCancel(function () use (&$state) {
-                $state['rootCleanedUp'] = true; 
+                $state['rootCleanedUp'] = true;
             });
 
             $child = $root->then(fn ($v) => $v);
@@ -257,16 +263,18 @@ describe('CancellationTokenSource', function () {
             $cts->token->track($child);
             $cts->cancelChain();
 
-            expect($state['rootCleanedUp'])->toBeTrue(); 
+            expect($state['rootCleanedUp'])->toBeTrue();
         });
 
         it('cancels multiple tracked promises via chain', function () {
             $cts = new CancellationTokenSource();
 
-            $root1  = new Promise(function () {});
+            $root1 = new Promise(function () {
+            });
             $child1 = $root1->then(fn ($v) => $v);
 
-            $root2  = new Promise(function () {});
+            $root2 = new Promise(function () {
+            });
             $child2 = $root2->then(fn ($v) => $v);
 
             $cts->token->track($child1);
@@ -283,14 +291,16 @@ describe('CancellationTokenSource', function () {
         it('does not affect untracked promises', function () {
             $cts = new CancellationTokenSource();
 
-            $tracked   = new Promise(function () {});
-            $untracked = new Promise(function () {});
+            $tracked = new Promise(function () {
+            });
+            $untracked = new Promise(function () {
+            });
 
             $cts->token->track($tracked);
             $cts->cancelChain();
 
             expect($tracked->isCancelled())->toBeTrue();
-            expect($untracked->isCancelled())->toBeFalse(); 
+            expect($untracked->isCancelled())->toBeFalse();
         });
 
         it('throws single exception from callback', function () {
@@ -354,8 +364,10 @@ describe('CancellationTokenSource', function () {
             $cts1 = new CancellationTokenSource();
             $cts2 = new CancellationTokenSource();
 
-            $root1 = new Promise(function () {});
-            $root2 = new Promise(function () {});
+            $root1 = new Promise(function () {
+            });
+            $root2 = new Promise(function () {
+            });
 
             $cts1->token->track($root1);
             $cts2->token->track($root2);
@@ -415,8 +427,10 @@ describe('CancellationTokenSource', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise1 = new Promise(function () {});
-            $promise2 = new Promise(function () {});
+            $promise1 = new Promise(function () {
+            });
+            $promise2 = new Promise(function () {
+            });
 
             $token->track($promise1);
             $token->track($promise2);
@@ -534,7 +548,8 @@ describe('CancellationTokenSource', function () {
                 $cts2->token
             );
 
-            $promise = new Promise(function () {});
+            $promise = new Promise(function () {
+            });
             $linked->token->track($promise);
 
             expect($linked->token->getTrackedCount())->toBe(1);

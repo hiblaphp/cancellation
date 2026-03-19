@@ -78,9 +78,12 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise1 = new Promise(function () {});
-            $promise2 = new Promise(function () {});
-            $promise3 = new Promise(function () {});
+            $promise1 = new Promise(function () {
+            });
+            $promise2 = new Promise(function () {
+            });
+            $promise3 = new Promise(function () {
+            });
 
             $token->track($promise1);
             $token->track($promise2);
@@ -102,7 +105,8 @@ describe('CancellationToken', function () {
         it('cancels tracked promise when token is cancelled', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
-            $promise = new Promise(function () {});
+            $promise = new Promise(function () {
+            });
 
             $token->track($promise);
 
@@ -117,9 +121,12 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise1 = new Promise(function () {});
-            $promise2 = new Promise(function () {});
-            $promise3 = new Promise(function () {});
+            $promise1 = new Promise(function () {
+            });
+            $promise2 = new Promise(function () {
+            });
+            $promise3 = new Promise(function () {
+            });
 
             $token->track($promise1);
             $token->track($promise2);
@@ -138,7 +145,8 @@ describe('CancellationToken', function () {
             $token = $cts->token;
             $cts->cancel();
 
-            $promise = new Promise(function () {});
+            $promise = new Promise(function () {
+            });
             $token->track($promise);
 
             expect($promise->isCancelled())->toBeTrue();
@@ -173,7 +181,8 @@ describe('CancellationToken', function () {
                 });
             });
 
-            $promise = $promise->catch(function () {});
+            $promise = $promise->catch(function () {
+            });
 
             $token->track($promise);
 
@@ -192,8 +201,10 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise1 = new Promise(function () {});
-            $promise2 = new Promise(function () {});
+            $promise1 = new Promise(function () {
+            });
+            $promise2 = new Promise(function () {
+            });
 
             $token->track($promise1);
             $token->track($promise2);
@@ -214,9 +225,12 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise1 = new Promise(function () {});
-            $promise2 = new Promise(function () {});
-            $promise3 = new Promise(function () {});
+            $promise1 = new Promise(function () {
+            });
+            $promise2 = new Promise(function () {
+            });
+            $promise3 = new Promise(function () {
+            });
 
             $token->track($promise1);
             $token->track($promise2);
@@ -239,7 +253,8 @@ describe('CancellationToken', function () {
         it('tracks the same promise multiple times', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
-            $promise = new Promise(function () {});
+            $promise = new Promise(function () {
+            });
 
             $token->track($promise);
             $token->track($promise);
@@ -373,7 +388,8 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $registration = $token->onCancel(function () {});
+            $registration = $token->onCancel(function () {
+            });
 
             $cts->cancel();
 
@@ -424,7 +440,8 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise = new Promise(function () {});
+            $promise = new Promise(function () {
+            });
             $child = $promise->then(function ($value) {
                 return $value * 2;
             });
@@ -441,7 +458,8 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $promise = new Promise(function () {});
+            $promise = new Promise(function () {
+            });
             $child1 = $promise->then(fn ($v) => $v);
             $child2 = $child1->then(fn ($v) => $v);
             $child3 = $child2->then(fn ($v) => $v);
@@ -491,7 +509,8 @@ describe('CancellationToken', function () {
         it('handles untracking non-tracked promise', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
-            $promise = new Promise(function () {});
+            $promise = new Promise(function () {
+            });
 
             expect(fn () => $token->untrack($promise))
                 ->not->toThrow(Throwable::class)
@@ -511,9 +530,12 @@ describe('CancellationToken', function () {
             $cts = new CancellationTokenSource();
             $token = $cts->token;
 
-            $p1 = new Promise(function () {});
-            $p2 = new Promise(function () {});
-            $p3 = new Promise(function () {});
+            $p1 = new Promise(function () {
+            });
+            $p2 = new Promise(function () {
+            });
+            $p3 = new Promise(function () {
+            });
 
             $token->track($p1);
             expect($token->getTrackedCount())->toBe(1);
@@ -582,7 +604,8 @@ describe('CancellationToken', function () {
 
             $p1 = Promise::resolved(1);
             $p2 = Promise::rejected(new RuntimeException('error'));
-            $p3 = new Promise(function () {});
+            $p3 = new Promise(function () {
+            });
 
             $token->track($p3);
 
