@@ -62,16 +62,43 @@ composer require hiblaphp/cancellation
 
 `hiblaphp/promise` gives every promise its own built-in cancellation —
 `cancel()`, `cancelChain()`, and `onCancel()` are first-class features of
-every promise instance. That system is self-contained: cleanup is registered
-at the point where the resource is created, and cancellation propagates
-through the chain automatically.
+every promise instance. That system works well for a single promise chain:
+cleanup is registered at the point where the resource is created, and
+cancellation propagates through the chain automatically.
 
-That model works perfectly when you own a specific promise chain and want
-to cancel it directly. But async applications often need to cancel work from
-the outside — a user clicks an abort button, a request times out, or a
-background job is told to stop. In these cases the cancellation decision
-happens at a different layer than the work itself, and the work may span
-multiple unrelated promise chains that have no shared ancestor to cancel.
+But that model is low-level. It works on individual chains, and it requires
+you to hold a reference to the right promise at the right time. As soon as
+your application grows beyond a single chain, the cracks start to show.
+
+Consider a typical async workflow — fetching a user, their orders, and
+generating a report, all running concurrently. Now a user clicks abort. To
+cancel everything you need a reference to every root promise in every chain.
+If those chains were created in different functions, passed across layers, or
+started at different times, gathering those references is fragile and
+invasive. The alternative — threading a shared flag or a nullable promise
+through every function signature — couples your entire call graph to a
+concern that most of it should not know about.
+```
+// Without CancellationToken — every layer must be aware of cancellation
+function buildReport(
+    int $userId,
+    ?PromiseInterface &$userPromise,    // ← caller needs this reference
+    ?PromiseInterface &$ordersPromise,  // ← and this one
+    ?PromiseInterface &$reportPromise   // ← and this one
+): PromiseInterface {
+    $userPromise   = fetchUser($userId);
+    $ordersPromise = fetchOrders($userId);
+    $reportPromise = Promise::all([$userPromise, $ordersPromise])
+        ->then(fn($r) => generateReport(...$r));
+
+    return $reportPromise;
+}
+
+// Caller has to manually cancel each one
+$userPromise->cancel();
+$ordersPromise->cancel();
+$reportPromise->cancel();
+```
 
 `hiblaphp/cancellation` solves this with the `CancellationToken` pattern,
 inspired by .NET's `CancellationToken` and `CancellationTokenSource`. The
@@ -80,18 +107,35 @@ idea is a producer/consumer split:
 - The **`CancellationTokenSource`** owns the ability to cancel. You hold it
   at the control point — the button handler, the timeout, the shutdown hook.
 - The **`CancellationToken`** is a read-only view of the cancellation signal.
-  You pass it into operations. Operations never receive the source, only the
-  token.
+  You pass it into operations or track promises against it. Operations never
+  receive the source, only the token.
 
-When you cancel the source, every operation holding that token is cancelled
-together, triggering their individual `onCancel()` handlers and freeing their
-resources — regardless of whether those operations share a promise chain.
+When you cancel the source, every promise tracked against that token is
+cancelled together — triggering their individual `onCancel()` handlers and
+freeing their resources — regardless of whether those promises share a chain
+or were created in completely different parts of your application.
+```
+// With CancellationToken — one signal cancels everything
+$cts = new CancellationTokenSource();
 
-This library is used throughout the Hibla ecosystem. `hiblaphp/stream`'s
-`readAsync()`, `writeAsync()`, and `pipeAsync()` all accept a token. The
-`await()` function in `hiblaphp/async` accepts a token as its second
-argument. Any Hibla component that performs async I/O is designed to receive
-a token and stop cleanly when it fires.
+$reportPromise = buildReport(1);
+$cts->token->track($reportPromise); // just-in-time tracking
+
+// One call cancels the entire operation
+$cts->cancel();
+// -> $reportPromise cancelled
+// -> Promise::all() cancels siblings synchronously
+// -> their onCancel() handlers free HTTP connections
+// -> buildReport() never needed to know about the token
+```
+
+This design means functions in your codebase do not need to accept and thread
+a `CancellationToken` through every layer. A function that creates a promise
+already has its cleanup registered via `onCancel()` at the point of creation.
+All the token needs to do is reach the returned promise and call `cancel()`
+on it — the cleanup chain fires correctly regardless of how deep in the call
+stack the promise was created. The promise chain carries its own cleanup. The
+token is just the trigger.
 
 ---
 
@@ -116,13 +160,10 @@ CancellationToken coordination:
 ```
 
 Use promise cancellation to encapsulate cleanup inside the function that
-creates a resource. Use `CancellationToken` when you need one external signal
-to coordinate cancellation across multiple unrelated operations — user-initiated
-abort, timeout coordination, or group cancellation.
-
-The two systems compose naturally — a token cancels promises, and those
-promises clean up their own resources via their own `onCancel()` handlers.
-You never have to reach inside a promise chain from the outside.
+creates a resource. Use `CancellationToken` when you need one external
+signal to coordinate cancellation across multiple independent operations —
+user-initiated abort, timeout coordination, or group cancellation where
+gathering individual promise references would be invasive or impractical.
 
 ---
 
