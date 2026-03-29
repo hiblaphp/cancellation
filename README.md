@@ -2,11 +2,7 @@
 
 **Structured external cancellation for the Hibla async ecosystem.**
 
-A `CancellationToken` implementation that provides a shared cancellation
-signal for coordinating the cancellation of multiple independent promises
-and async operations from a single control point. Complements the built-in
-cancellation on `hiblaphp/promise` by adding external, user-driven
-cancellation that can span across unrelated promise chains.
+A `CancellationToken` implementation that provides a shared cancellation signal for coordinating the cancellation of multiple independent promises and async operations from a single control point. Complements the built-in cancellation on `hiblaphp/promise` by adding external, user-driven cancellation that can span across unrelated promise chains.
 
 [![Latest Release](https://img.shields.io/github/release/hiblaphp/cancellation.svg?style=flat-square)](https://github.com/hiblaphp/cancellation/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
@@ -66,24 +62,12 @@ composer require hiblaphp/cancellation
 
 ## Introduction
 
-`hiblaphp/promise` gives every promise its own built-in cancellation —
-`cancel()`, `cancelChain()`, and `onCancel()` are first-class features of
-every promise instance. That system works well for a single promise chain:
-cleanup is registered at the point where the resource is created, and
-cancellation propagates through the chain automatically.
+`hiblaphp/promise` gives every promise its own built-in cancellation. `cancel()`, `cancelChain()`, and `onCancel()` are first-class features of every promise instance. That system works well for a single promise chain: cleanup is registered at the point where the resource is created, and cancellation propagates through the chain automatically.
 
-But that model is low-level. It works on individual chains, and it requires
-you to hold a reference to the right promise at the right time. As soon as
-your application grows beyond a single chain, the cracks start to show.
+But that model is low-level. It works on individual chains, and it requires you to hold a reference to the right promise at the right time. As soon as your application grows beyond a single chain, the cracks start to show.
 
-Consider a typical async workflow — fetching a user, their orders, and
-generating a report, all running concurrently. Now a user clicks abort. To
-cancel everything you need a reference to every root promise in every chain.
-If those chains were created in different functions, passed across layers, or
-started at different times, gathering those references is fragile and
-invasive. The alternative — threading a shared flag or a nullable promise
-through every function signature — couples your entire call graph to a
-concern that most of it should not know about.
+Consider a typical async workflow: fetching a user, their orders, and generating a report, all running concurrently. Now a user clicks abort. To cancel everything you need a reference to every root promise in every chain. If those chains were created in different functions, passed across layers, or started at different times, gathering those references is fragile and invasive. The alternative is threading a shared flag or a nullable promise through every function signature, which couples your entire call graph to a concern that most of it should not know about.
+
 ```php
 // Without CancellationToken — every layer must be aware of cancellation
 function buildReport(
@@ -106,20 +90,13 @@ $ordersPromise->cancel();
 $reportPromise->cancel();
 ```
 
-`hiblaphp/cancellation` solves this with the `CancellationToken` pattern,
-inspired by .NET's `CancellationToken` and `CancellationTokenSource`. The
-idea is a producer/consumer split:
+`hiblaphp/cancellation` solves this with the `CancellationToken` pattern, inspired by .NET's `CancellationToken` and `CancellationTokenSource`. The idea is a producer/consumer split:
 
-- The **`CancellationTokenSource`** owns the ability to cancel. You hold it
-  at the control point — the button handler, the timeout, the shutdown hook.
-- The **`CancellationToken`** is a read-only view of the cancellation signal.
-  You pass it into operations or track promises against it. Operations never
-  receive the source, only the token.
+- The **`CancellationTokenSource`** owns the ability to cancel. You hold it at the control point: the button handler, the timeout, the shutdown hook.
+- The **`CancellationToken`** is a read-only view of the cancellation signal. You pass it into operations or track promises against it. Operations never receive the source, only the token.
 
-When you cancel the source, every promise tracked against that token is
-cancelled together — triggering their individual `onCancel()` handlers and
-freeing their resources — regardless of whether those promises share a chain
-or were created in completely different parts of your application.
+When you cancel the source, every promise tracked against that token is cancelled together, triggering their individual `onCancel()` handlers and freeing their resources, regardless of whether those promises share a chain or were created in completely different parts of your application.
+
 ```php
 // With CancellationToken — one signal cancels everything
 $cts = new CancellationTokenSource();
@@ -135,21 +112,14 @@ $cts->cancel();
 // -> buildReport() never needed to know about the token
 ```
 
-This design means functions in your codebase do not need to accept and thread
-a `CancellationToken` through every layer. A function that creates a promise
-already has its cleanup registered via `onCancel()` at the point of creation.
-All the token needs to do is reach the returned promise and call `cancel()`
-on it — the cleanup chain fires correctly regardless of how deep in the call
-stack the promise was created. The promise chain carries its own cleanup. The
-token is just the trigger.
+This design means functions in your codebase do not need to accept and thread a `CancellationToken` through every layer. A function that creates a promise already has its cleanup registered via `onCancel()` at the point of creation. All the token needs to do is reach the returned promise and call `cancel()` on it. The cleanup chain fires correctly regardless of how deep in the call stack the promise was created. The promise chain carries its own cleanup, and the token is just the trigger.
 
 ---
 
 ## How it Relates to Promise Cancellation
 
-`hiblaphp/promise` has built-in cancellation on every promise — it is
-self-contained and does not require this library. `hiblaphp/cancellation`
-sits on top of that system and adds external coordination.
+`hiblaphp/promise` has built-in cancellation on every promise. It is self-contained and does not require this library. `hiblaphp/cancellation` sits on top of that system and adds external coordination.
+
 ```
 Built-in promise cancellation:
   $promise->cancel()
@@ -165,18 +135,14 @@ CancellationToken coordination:
     → resources freed
 ```
 
-Use promise cancellation to encapsulate cleanup inside the function that
-creates a resource. Use `CancellationToken` when you need one external
-signal to coordinate cancellation across multiple independent operations —
-user-initiated abort, timeout coordination, or group cancellation where
-gathering individual promise references would be invasive or impractical.
+Use promise cancellation to encapsulate cleanup inside the function that creates a resource. Use `CancellationToken` when you need one external signal to coordinate cancellation across multiple independent operations: user-initiated abort, timeout coordination, or group cancellation where gathering individual promise references would be invasive or impractical.
 
 ---
 
 ## Basic Usage
 
-The token is accessed via the `readonly` public property `$token` on the
-source — there is no getter method:
+The token is accessed via the `readonly` public property `$token` on the source. There is no getter method:
+
 ```php
 use Hibla\Cancellation\CancellationTokenSource;
 
@@ -191,8 +157,8 @@ $promise2 = fetchOrders(1, $token);
 $cts->cancel();
 ```
 
-Calling `cancel()` multiple times on the same source is safe and idempotent
-— subsequent calls have no effect:
+Calling `cancel()` multiple times on the same source is safe and idempotent. Subsequent calls have no effect:
+
 ```php
 $cts->cancel(); // cancels
 $cts->cancel(); // no-op — already cancelled
@@ -203,14 +169,12 @@ $cts->cancel(); // no-op
 
 ## Accepting a Token in Your Functions
 
-Functions that want to support external cancellation accept a
-`CancellationToken` and use it to either check for cancellation at safe
-checkpoints or to track the promises they create.
+Functions that want to support external cancellation accept a `CancellationToken` and use it to either check for cancellation at safe checkpoints or to track the promises they create.
 
 ### Polling with `isCancelled()`
 
-Use `isCancelled()` for non-throwing checks inside loops or before starting
-expensive work:
+Use `isCancelled()` for non-throwing checks inside loops or before starting expensive work:
+
 ```php
 use Hibla\Cancellation\CancellationToken;
 
@@ -228,9 +192,8 @@ function processItems(array $items, CancellationToken $token): void
 
 ### Throwing with `throwIfCancelled()`
 
-`throwIfCancelled()` is the preferred pattern for long-running work because
-it surfaces cancellation as a `CancelledException` that unwinds naturally
-through `try/finally` blocks, ensuring cleanup always runs:
+`throwIfCancelled()` is the preferred pattern for long-running work because it surfaces cancellation as a `CancelledException` that unwinds naturally through `try/finally` blocks, ensuring cleanup always runs:
+
 ```php
 function processItems(array $items, CancellationToken $token): void
 {
@@ -250,9 +213,8 @@ function processItems(array $items, CancellationToken $token): void
 
 ### Tracking promises with `track()`
 
-Use `track()` to register a promise for automatic cancellation when the
-token is cancelled. The promise is automatically untracked when it settles —
-fulfilled, rejected, or cancelled — so no manual cleanup is ever needed:
+Use `track()` to register a promise for automatic cancellation when the token is cancelled. The promise is automatically untracked when it settles (fulfilled, rejected, or cancelled), so no manual cleanup is ever needed:
+
 ```php
 use Hibla\Cancellation\CancellationToken;
 use Hibla\Promise\Interfaces\PromiseInterface;
@@ -270,10 +232,8 @@ function fetchUser(int $id, CancellationToken $token): PromiseInterface
 }
 ```
 
-Tracking an already-settled or already-cancelled promise is a safe no-op —
-`track()` checks the promise state and returns immediately if it has already
-completed. Promises are untracked automatically on settlement, covering all
-three outcomes — you never need to call `untrack()` after a promise completes:
+Tracking an already-settled or already-cancelled promise is a safe no-op. `track()` checks the promise state and returns immediately if it has already completed. Promises are untracked automatically on settlement across all three outcomes, so you never need to call `untrack()` after a promise completes:
+
 ```php
 $promise = $token->track(fetchUser(1));
 
@@ -283,17 +243,12 @@ $token->getTrackedCount(); // 1
 $token->getTrackedCount(); // 0 — automatically untracked
 ```
 
-Manual `untrack()` is only needed when you want to detach a still-pending
-promise from the token before it settles — for example, promoting an
-operation to run independently after a user cancels everything else.
+Manual `untrack()` is only needed when you want to detach a still-pending promise from the token before it settles, for example when promoting an operation to run independently after a user cancels everything else.
 
 ### Default parameter with `CancellationToken::none()`
 
-`CancellationToken::none()` returns a shared singleton token that can never
-be cancelled. All token methods work correctly on it without any null checks
-or guards — `isCancelled()` always returns false, `throwIfCancelled()` never
-throws, `track()` is a safe no-op, and `onCancel()` returns a pre-disposed
-registration without storing the callback:
+`CancellationToken::none()` returns a shared singleton token that can never be cancelled. All token methods work correctly on it without any null checks or guards: `isCancelled()` always returns false, `throwIfCancelled()` never throws, `track()` is a safe no-op, and `onCancel()` returns a pre-disposed registration without storing the callback:
+
 ```php
 use Hibla\Cancellation\CancellationToken;
 
@@ -316,9 +271,8 @@ $user = fetchUser(1)->wait();
 $user = fetchUser(1, $cts->token)->wait();
 ```
 
-Calling `onCancel()` on `none()` returns a pre-disposed registration without
-storing the callback — the callback will never fire and nothing is retained
-against the singleton:
+Calling `onCancel()` on `none()` returns a pre-disposed registration without storing the callback. The callback will never fire and nothing is retained against the singleton:
+
 ```php
 $token = CancellationToken::none();
 
@@ -334,11 +288,8 @@ $registration->dispose();    // no-op, returns false
 
 ## Cancellation is Synchronous
 
-Like `Promise::cancel()`, cancellation through a `CancellationTokenSource`
-is **synchronous**. When you call `$cts->cancel()`, all registered
-`onCancel()` callbacks and all tracked promise cancellations run immediately
-and in order before `cancel()` returns. This eliminates race conditions where
-a promise could be resolved in the same tick that cancellation was requested:
+Like `Promise::cancel()`, cancellation through a `CancellationTokenSource` is **synchronous**. When you call `$cts->cancel()`, all registered `onCancel()` callbacks and all tracked promise cancellations run immediately and in order before `cancel()` returns. This eliminates race conditions where a promise could be resolved in the same tick that cancellation was requested:
+
 ```php
 $cts = new CancellationTokenSource();
 
@@ -354,12 +305,8 @@ $cts->cancel();
 echo "C\n"; // runs third — after both handlers have already run
 ```
 
-Because cancellation is synchronous, callbacks registered via `onCancel()`
-on the token must be **fast**. They run directly on the call stack of
-`cancel()` — a slow or blocking handler stalls that call stack. Keep
-handlers to simple cleanup: cancelling a timer, removing a watcher, or
-closing a handle. For async cleanup, fire and return immediately rather
-than awaiting:
+Because cancellation is synchronous, callbacks registered via `onCancel()` on the token must be **fast**. They run directly on the call stack of `cancel()`, so a slow or blocking handler stalls that call stack. Keep handlers to simple cleanup: cancelling a timer, removing a watcher, or closing a handle. For async cleanup, fire and return immediately rather than awaiting:
+
 ```php
 $cts->token->onCancel(function () use ($requestId) {
     // Correct: fire and return
@@ -376,11 +323,8 @@ $cts->token->onCancel(function () use ($requestId) {
 
 ### Exceptions during cancellation
 
-If any `onCancel()` callback or promise cancellation throws during `cancel()`,
-the library does not abort mid-loop. All remaining callbacks and promises are
-still processed. Exceptions are collected and at the end either a single
-exception is rethrown or — if multiple callbacks threw — an
-`AggregateErrorException` is thrown containing all of them:
+If any `onCancel()` callback or promise cancellation throws during `cancel()`, the library does not abort mid-loop. All remaining callbacks and promises are still processed. Exceptions are collected and, at the end, either a single exception is rethrown or, if multiple callbacks threw, an `AggregateErrorException` is thrown containing all of them:
+
 ```php
 $cts->token->onCancel(fn() => throw new \RuntimeException('A failed'));
 $cts->token->onCancel(fn() => releaseOtherResource()); // still runs
@@ -400,11 +344,8 @@ try {
 
 ## Automatic Timeout
 
-Pass a timeout in seconds to the constructor and the source will
-automatically cancel after that duration. The timeout timer uses
-`WeakReference` internally — if the source goes out of scope before the
-timer fires, the timer cancels cleanly without error and does not keep
-the source alive:
+Pass a timeout in seconds to the constructor and the source will automatically cancel after that duration. The timeout timer uses `WeakReference` internally, so if the source goes out of scope before the timer fires, the timer cancels cleanly without error and does not keep the source alive:
+
 ```php
 // Cancels after 5 seconds
 $cts = new CancellationTokenSource(5.0);
@@ -414,9 +355,8 @@ $promise = longRunningOperation($cts->token);
 $promise->wait(); // throws CancelledException if 5 seconds elapse
 ```
 
-You can set or reset the timeout dynamically after construction by calling
-`cancelAfter()`. Each call cancels the previous timer and starts a new one
-— the constructor timeout is not fixed:
+You can set or reset the timeout dynamically after construction by calling `cancelAfter()`. Each call cancels the previous timer and starts a new one, so the constructor timeout is not fixed:
+
 ```php
 $cts = new CancellationTokenSource(5.0); // starts with 5 second timeout
 $cts->cancelAfter(10.0);                 // reset — now cancels in 10 seconds
@@ -427,10 +367,8 @@ $cts->cancelAfter(2.0);                  // reset again — now cancels in 2 sec
 
 ## Linking Multiple Tokens
 
-`createLinkedTokenSource()` creates a new source that cancels automatically
-when any of the provided tokens cancel. This is the standard way to combine
-multiple cancellation signals — user abort, timeout, system shutdown — into
-a single token you pass into an operation:
+`createLinkedTokenSource()` creates a new source that cancels automatically when any of the provided tokens cancel. This is the standard way to combine multiple cancellation signals (user abort, timeout, system shutdown) into a single token you pass into an operation:
+
 ```php
 use Hibla\Cancellation\CancellationTokenSource;
 
@@ -446,18 +384,12 @@ $linkedCts = CancellationTokenSource::createLinkedTokenSource(
 $result = fetchData($linkedCts->token)->wait();
 ```
 
-If any of the input tokens are already cancelled at the time
-`createLinkedTokenSource()` is called, the linked source is cancelled
-immediately before being returned.
+If any of the input tokens are already cancelled at the time `createLinkedTokenSource()` is called, the linked source is cancelled immediately before being returned.
 
-The linked source uses `WeakReference` internally — parent token callbacks
-do not keep the linked source alive after it goes out of scope. If the linked
-source is garbage collected before any parent token fires, the link is severed
-cleanly. Once one parent token fires and cancels the linked source, subsequent
-parent token firings call `cancel()` on the already-cancelled source — which
-is a safe no-op.
+The linked source uses `WeakReference` internally, so parent token callbacks do not keep the linked source alive after it goes out of scope. If the linked source is garbage collected before any parent token fires, the link is severed cleanly. Once one parent token fires and cancels the linked source, subsequent parent token firings call `cancel()` on the already-cancelled source, which is a safe no-op.
 
 ### Full example — user cancellation, timeout, and `await()`
+
 ```php
 use Hibla\Cancellation\CancellationTokenSource;
 use function Hibla\async;
@@ -494,14 +426,10 @@ $result = await($workflow);
 
 ## Cleanup Registration with `onCancel()`
 
-`onCancel()` on the token itself is for registering cleanup that is not tied
-to a specific promise — for example logging, releasing a lock, or updating
-state when any operation in a group is cancelled.
+`onCancel()` on the token itself is for registering cleanup that is not tied to a specific promise, such as logging, releasing a lock, or updating state when any operation in a group is cancelled.
 
-It returns a `CancellationTokenRegistration` that lets you unregister the
-callback if the operation completes before cancellation occurs. `dispose()`
-returns `true` if the callback was successfully removed, `false` if it was
-already disposed or had already fired:
+It returns a `CancellationTokenRegistration` that lets you unregister the callback if the operation completes before cancellation occurs. `dispose()` returns `true` if the callback was successfully removed, `false` if it was already disposed or had already fired:
+
 ```php
 $cts   = new CancellationTokenSource();
 $token = $cts->token;
@@ -523,24 +451,16 @@ try {
 }
 ```
 
-> **Important:** If you let a `CancellationTokenRegistration` go out of scope
-> without calling `dispose()`, the callback remains registered and will still
-> fire when the token is cancelled. The registration's `__destruct()` only
-> nullifies the internal state reference for garbage collection — it does NOT
-> unregister the callback. Always call `dispose()` explicitly if you want to
-> prevent the callback from firing.
+> **Important:** If you let a `CancellationTokenRegistration` go out of scope without calling `dispose()`, the callback remains registered and will still fire when the token is cancelled. The registration's `__destruct()` only nullifies the internal state reference for garbage collection. It does NOT unregister the callback. Always call `dispose()` explicitly if you want to prevent the callback from firing.
 
-If the token is already cancelled when `onCancel()` is called, the callback
-fires immediately and synchronously, and a pre-disposed registration is
-returned.
+If the token is already cancelled when `onCancel()` is called, the callback fires immediately and synchronously, and a pre-disposed registration is returned.
 
 ---
 
 ## Monitoring Tracked Promises
 
-The token provides methods for inspecting and managing its tracked promises.
-These are primarily useful for monitoring, diagnostics, and advanced lifecycle
-management:
+The token provides methods for inspecting and managing its tracked promises. These are primarily useful for monitoring, diagnostics, and advanced lifecycle management:
+
 ```php
 // How many promises are currently being tracked
 $count = $token->getTrackedCount();
@@ -556,20 +476,16 @@ $token->untrack($promise);
 $token->clearTracked();
 ```
 
-Note that `clearTracked()` and `untrack()` do not cancel the promises they
-remove — the promises continue running and will resolve or reject normally.
-If you need to cancel them, call `cancel()` on the source before clearing.
+Note that `clearTracked()` and `untrack()` do not cancel the promises they remove. The promises continue running and will resolve or reject normally. If you need to cancel them, call `cancel()` on the source before clearing.
 
 ---
 
 ## `cancel()` vs `cancelChain()`
 
-The source provides two cancellation methods that mirror the same distinction
-on `Promise` itself.
+The source provides two cancellation methods that mirror the same distinction on `Promise` itself.
 
-**`cancel()`** calls `Promise::cancel()` on all tracked promises — forward
-propagation only. Cancels the tracked promise and all its children. Does not
-walk up to the root. Use this when you track root promises directly:
+**`cancel()`** calls `Promise::cancel()` on all tracked promises, which means forward propagation only. It cancels the tracked promise and all its children but does not walk up to the root. Use this when you track root promises directly:
+
 ```php
 $root  = Http::get('/api/users');  // onCancel() -> abort HTTP
 $child = $root->then(fn($r) => json_decode($r->getBody()));
@@ -581,10 +497,8 @@ $cts->cancel();
 // $child cancelled via forward propagation
 ```
 
-**`cancelChain()`** calls `Promise::cancelChain()` on all tracked promises —
-walks up to the root before cancelling downward. Use this when you only hold
-child promise references but need root-level `onCancel()` handlers to fire
-for proper resource cleanup:
+**`cancelChain()`** calls `Promise::cancelChain()` on all tracked promises, walking up to the root before cancelling downward. Use this when you only hold child promise references but need root-level `onCancel()` handlers to fire for proper resource cleanup:
+
 ```php
 $root  = Http::get('/api/users');  // onCancel() -> abort HTTP
 $child = $root->then(fn($r) => json_decode($r->getBody()));
@@ -597,21 +511,14 @@ $cts->cancelChain();
 // $child cancelled via forward propagation
 ```
 
-> **Important:** Only use `cancelChain()` when you own the full promise chain
-> and no external code holds references to ancestor promises. It walks up to
-> the root and cancels everything from there. If the root promise is shared
-> with other callers, `cancelChain()` will cancel their operations too — this
-> is almost certainly a bug. When in doubt, track root promises directly and
-> use `cancel()`.
+> **Important:** Only use `cancelChain()` when you own the full promise chain and no external code holds references to ancestor promises. It walks up to the root and cancels everything from there. If the root promise is shared with other callers, `cancelChain()` will cancel their operations too, which is almost certainly a bug. When in doubt, track root promises directly and use `cancel()`.
 
 ---
 
 ## Integration with `await()`
 
-`await()` from `hiblaphp/async` accepts an optional `CancellationToken` as
-its second argument. When provided, it automatically calls
-`token->track($promise)` — you do not need to call `track()` manually at
-the `await()` call site:
+`await()` from `hiblaphp/async` accepts an optional `CancellationToken` as its second argument. When provided, it automatically calls `token->track($promise)`, so you do not need to call `track()` manually at the `await()` call site:
+
 ```php
 use function Hibla\await;
 
@@ -624,8 +531,8 @@ async(function () use ($token) {
 });
 ```
 
-If you are not using `hiblaphp/async`, call `track()` on the token directly
-before awaiting the promise:
+If you are not using `hiblaphp/async`, call `track()` on the token directly before awaiting the promise:
+
 ```php
 // Without hiblaphp/async — use track() manually
 $promise = fetchUser(1);
@@ -637,16 +544,10 @@ $user = $promise->wait();
 
 ## Resource Cleanup on Scope Exit
 
-`CancellationTokenSource` implements `__destruct()` which cancels the
-timeout timer and clears all callbacks and tracked promises when the source
-goes out of scope.
+`CancellationTokenSource` implements `__destruct()` which cancels the timeout timer and clears all callbacks and tracked promises when the source goes out of scope.
 
-> **Important:** `__destruct()` does NOT call `cancel()` — it only clears
-> the internal state. Both tracked promises and registered `onCancel()`
-> callbacks are silently dropped without firing. Promises continue running
-> and will resolve or reject normally. If you need promises to be cancelled
-> and `onCancel()` handlers to fire when the source goes out of scope, call
-> `cancel()` explicitly in a `finally` block:
+> **Important:** `__destruct()` does NOT call `cancel()`. It only clears the internal state. Both tracked promises and registered `onCancel()` callbacks are silently dropped without firing. Promises continue running and will resolve or reject normally. If you need promises to be cancelled and `onCancel()` handlers to fire when the source goes out of scope, call `cancel()` explicitly in a `finally` block:
+
 ```php
 function doWork(): mixed
 {
@@ -669,8 +570,8 @@ function doWork(): mixed
 }
 ```
 
-The timeout timer is the exception — it is always cancelled automatically
-on scope exit regardless of whether `cancel()` is called explicitly:
+The timeout timer is the exception. It is always cancelled automatically on scope exit regardless of whether `cancel()` is called explicitly:
+
 ```
 On scope exit ($cts goes out of scope):
 
@@ -699,24 +600,25 @@ On scope exit ($cts goes out of scope):
 | Method | Description |
 |---|---|
 | `isCancelled(): bool` | Non-throwing check. True if the source has been cancelled. |
-| `throwIfCancelled(): void` | Throws `CancelledException` if cancelled. Preferred for long-running work — unwinds through finally blocks. |
-| `onCancel(callable $callback): CancellationTokenRegistration` | Register a synchronous cleanup callback. Must be fast — no blocking or awaiting. Returns a registration for unregistering. If already cancelled, fires immediately and returns a pre-disposed registration. No-op on `none()` — returns a pre-disposed registration without storing the callback. |
+| `throwIfCancelled(): void` | Throws `CancelledException` if cancelled. Preferred for long-running work since it unwinds through finally blocks. |
+| `onCancel(callable $callback): CancellationTokenRegistration` | Register a synchronous cleanup callback. Must be fast with no blocking or awaiting. Returns a registration for unregistering. If already cancelled, fires immediately and returns a pre-disposed registration. No-op on `none()`, returning a pre-disposed registration without storing the callback. |
 | `track(PromiseInterface $promise): PromiseInterface` | Register a promise for automatic cancellation. Auto-untracked when promise settles. Safe no-op on already-settled promises and on `none()`. Returns the same promise. |
 | `untrack(PromiseInterface $promise): void` | Stop tracking a promise without cancelling it. |
 | `getTrackedCount(): int` | Returns the number of currently tracked promises. |
 | `clearTracked(): void` | Remove all tracked promises without cancelling them. |
-| `CancellationToken::none()` | Static singleton. A token that can never be cancelled. All methods are safe to call — `onCancel()` and `track()` are no-ops that store nothing against the singleton. |
+| `CancellationToken::none()` | Static singleton. A token that can never be cancelled. All methods are safe to call, and `onCancel()` and `track()` are no-ops that store nothing against the singleton. |
 
 ### `CancellationTokenRegistration`
 
 | Method | Description |
 |---|---|
-| `dispose(): bool` | Unregister the callback. Returns `true` if removed, `false` if already disposed or already fired. Safe to call multiple times. Does NOT fire automatically on garbage collection — call explicitly to prevent the callback from firing. |
+| `dispose(): bool` | Unregister the callback. Returns `true` if removed, `false` if already disposed or already fired. Safe to call multiple times. Does NOT fire automatically on garbage collection, so call explicitly to prevent the callback from firing. |
 | `isDisposed(): bool` | True if `dispose()` was called. |
 
 ---
 
 ## Development
+
 ```bash
 git clone https://github.com/hiblaphp/cancellation.git
 cd cancellation
@@ -733,12 +635,9 @@ composer install
 
 ## Credits
 
-- **API Design:** Inspired by .NET's `CancellationToken` and
-  `CancellationTokenSource` pattern.
-- **Promise Integration:** Built on
-  [hiblaphp/promise](https://github.com/hiblaphp/promise).
-- **Event Loop:** Powered by
-  [hiblaphp/event-loop](https://github.com/hiblaphp/event-loop).
+- **API Design:** Inspired by .NET's `CancellationToken` and `CancellationTokenSource` pattern.
+- **Promise Integration:** Built on [hiblaphp/promise](https://github.com/hiblaphp/promise).
+- **Event Loop:** Powered by [hiblaphp/event-loop](https://github.com/hiblaphp/event-loop).
 
 ---
 
