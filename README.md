@@ -5,8 +5,9 @@
 A `CancellationToken` implementation that provides a shared cancellation signal for coordinating the cancellation of multiple independent promises and async operations from a single control point. Complements the built-in cancellation on `hiblaphp/promise` by adding external, user-driven cancellation that can span across unrelated promise chains.
 
 [![Latest Release](https://img.shields.io/github/release/hiblaphp/cancellation.svg?style=flat-square)](https://github.com/hiblaphp/cancellation/releases)
+[![Tests](https://github.com/hiblaphp/cancellation/actions/workflows/test.yml/badge.svg)](https://github.com/hiblaphp/cancellation/actions/workflows/test.yml)
+[![Total Downloads](https://img.shields.io/packagist/dt/hiblaphp/cancellation.svg?style=flat-square)](https://packagist.org/packages/hiblaphp/cancellation)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
-
 ---
 
 ## Contents
