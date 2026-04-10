@@ -55,7 +55,7 @@ composer require hiblaphp/cancellation
 ```
 
 **Requirements:**
-- PHP 8.3+
+- PHP 8.4+
 - `hiblaphp/promise`
 - `hiblaphp/event-loop`
 
