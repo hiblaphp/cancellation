@@ -50,8 +50,11 @@ A `CancellationToken` implementation that provides a shared cancellation signal 
 ---
 
 ## Installation
+
+>This library is currently in its Alpha development phase. You can install the library via Composer by explicitly allowing alpha stability:
+
 ```bash
-composer require hiblaphp/cancellation
+composer require hiblaphp/cancellation:^1.0@alpha
 ```
 
 **Requirements:**
