@@ -8,6 +8,7 @@
             "Hibla\\Cancellation\\": "src/"
         }
     },
+    "minimum-stability": "alpha",
     "prefer-stable": true,
     "autoload-dev": {
         "psr-4": {
@@ -22,8 +23,8 @@
     ],
     "require": {
         "php": "^8.4",
-        "hiblaphp/event-loop": "^1.0@alpha",
-        "hiblaphp/promise": "^1.0@alpha"
+        "hiblaphp/event-loop": "^1.0",
+        "hiblaphp/promise": "^1.0"
     },
     "require-dev": {
         "pestphp/pest": "^4.0",
