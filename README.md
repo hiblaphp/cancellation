@@ -51,16 +51,22 @@ A `CancellationToken` implementation that provides a shared cancellation signal 
 
 ## Installation
 
->This library is currently in its Alpha development phase. You can install the library via Composer by explicitly allowing alpha stability:
+>This package is currently in **beta**. Before installing, ensure your `composer.json`
+allows beta releases:
+
+```json
+{
+    "minimum-stability": "beta",
+    "prefer-stable": true
+}
+```
 
 ```bash
-composer require hiblaphp/cancellation:"^1.0@alpha"
+composer require hiblaphp/cancellation
 ```
 
 **Requirements:**
-- PHP 8.4+
-- `hiblaphp/promise`
-- `hiblaphp/event-loop`
+- PHP 8.4+ 
 
 ---
 
