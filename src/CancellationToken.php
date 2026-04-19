@@ -9,7 +9,7 @@ use Hibla\Cancellation\Internals\CancellationTokenState;
 use Hibla\Promise\Exceptions\CancelledException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 
-final readonly class CancellationToken
+final class CancellationToken
 {
     /**
      * @internal Only CancellationTokenSource should create tokens
@@ -17,8 +17,18 @@ final readonly class CancellationToken
      * @param CancellationTokenState $state The shared state with the source
      */
     public function __construct(
-        private CancellationTokenState $state
+        private readonly CancellationTokenState $state
     ) {
+    }
+
+    /**
+     * The number of promises currently being tracked.
+     *
+     * Useful for monitoring and debugging to see how many operations are
+     * still pending cancellation.
+     */
+    public int $trackCount {
+        get => \count($this->state->trackedPromises);
     }
 
     /**
@@ -247,19 +257,6 @@ final readonly class CancellationToken
     public function untrack(PromiseInterface $promise): void
     {
         $this->untrackById(spl_object_id($promise));
-    }
-
-    /**
-     * Get the number of promises currently being tracked.
-     *
-     * Useful for monitoring and debugging to see how many operations are
-     * still pending cancellation.
-     *
-     * @return int Number of tracked promises
-     */
-    public function getTrackedCount(): int
-    {
-        return \count($this->state->trackedPromises);
     }
 
     /**

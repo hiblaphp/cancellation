@@ -247,10 +247,10 @@ Tracking an already-settled or already-cancelled promise is a safe no-op. `track
 ```php
 $promise = $token->track(fetchUser(1));
 
-$token->getTrackedCount(); // 1
+$token->trackCount; // 1
 
 // After the promise fulfills, rejects, or is cancelled:
-$token->getTrackedCount(); // 0 — automatically untracked
+$token->trackCount; // 0 — automatically untracked
 ```
 
 Manual `untrack()` is only needed when you want to detach a still-pending promise from the token before it settles, for example when promoting an operation to run independently after a user cancels everything else.
@@ -473,7 +473,7 @@ The token provides methods for inspecting and managing its tracked promises. The
 
 ```php
 // How many promises are currently being tracked
-$count = $token->getTrackedCount();
+$count = $token->trackCount;
 
 // Stop tracking a specific promise without cancelling it —
 // useful when an operation completes and you want to detach it
@@ -614,7 +614,7 @@ On scope exit ($cts goes out of scope):
 | `onCancel(callable $callback): CancellationTokenRegistration` | Register a synchronous cleanup callback. Must be fast with no blocking or awaiting. Returns a registration for unregistering. If already cancelled, fires immediately and returns a pre-disposed registration. No-op on `none()`, returning a pre-disposed registration without storing the callback. |
 | `track(PromiseInterface $promise): PromiseInterface` | Register a promise for automatic cancellation. Auto-untracked when promise settles. Safe no-op on already-settled promises and on `none()`. Returns the same promise. |
 | `untrack(PromiseInterface $promise): void` | Stop tracking a promise without cancelling it. |
-| `getTrackedCount(): int` | Returns the number of currently tracked promises. |
+| `trackCount: int` | Returns the number of currently tracked promises. |
 | `clearTracked(): void` | Remove all tracked promises without cancelling them. |
 | `CancellationToken::none()` | Static singleton. A token that can never be cancelled. All methods are safe to call, and `onCancel()` and `track()` are no-ops that store nothing against the singleton. |
 

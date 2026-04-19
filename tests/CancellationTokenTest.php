@@ -71,7 +71,7 @@ describe('CancellationToken', function () {
 
             $token->track($promise);
 
-            expect($token->getTrackedCount())->toBe(1);
+            expect($token->trackCount)->toBe(1);
         });
 
         it('tracks multiple promises', function () {
@@ -89,7 +89,7 @@ describe('CancellationToken', function () {
             $token->track($promise2);
             $token->track($promise3);
 
-            expect($token->getTrackedCount())->toBe(3);
+            expect($token->trackCount)->toBe(3);
         });
 
         it('does not track already settled promise', function () {
@@ -99,7 +99,7 @@ describe('CancellationToken', function () {
 
             $token->track($promise);
 
-            expect($token->getTrackedCount())->toBe(0);
+            expect($token->trackCount)->toBe(0);
         });
 
         it('cancels tracked promise when token is cancelled', function () {
@@ -164,11 +164,11 @@ describe('CancellationToken', function () {
 
             $token->track($promise);
 
-            expect($token->getTrackedCount())->toBe(1);
+            expect($token->trackCount)->toBe(1);
 
             $promise->wait();
 
-            expect($token->getTrackedCount())->toBe(0);
+            expect($token->trackCount)->toBe(0);
         });
 
         it('automatically untracks promise when it rejects', function () {
@@ -186,7 +186,7 @@ describe('CancellationToken', function () {
 
             $token->track($promise);
 
-            expect($token->getTrackedCount())->toBe(1);
+            expect($token->trackCount)->toBe(1);
 
             try {
                 $promise->wait();
@@ -194,7 +194,7 @@ describe('CancellationToken', function () {
                 // Expected
             }
 
-            expect($token->getTrackedCount())->toBe(0);
+            expect($token->trackCount)->toBe(0);
         });
 
         it('manually untracks a specific promise', function () {
@@ -209,11 +209,11 @@ describe('CancellationToken', function () {
             $token->track($promise1);
             $token->track($promise2);
 
-            expect($token->getTrackedCount())->toBe(2);
+            expect($token->trackCount)->toBe(2);
 
             $token->untrack($promise1);
 
-            expect($token->getTrackedCount())->toBe(1);
+            expect($token->trackCount)->toBe(1);
 
             $cts->cancel();
 
@@ -236,11 +236,11 @@ describe('CancellationToken', function () {
             $token->track($promise2);
             $token->track($promise3);
 
-            expect($token->getTrackedCount())->toBe(3);
+            expect($token->trackCount)->toBe(3);
 
             $token->clearTracked();
 
-            expect($token->getTrackedCount())->toBe(0);
+            expect($token->trackCount)->toBe(0);
 
             $cts->cancel();
 
@@ -260,7 +260,7 @@ describe('CancellationToken', function () {
             $token->track($promise);
             $token->track($promise);
 
-            expect($token->getTrackedCount())->toBe(3);
+            expect($token->trackCount)->toBe(3);
 
             $cts->cancel();
 
@@ -277,8 +277,8 @@ describe('CancellationToken', function () {
             $token->track($resolved);
             $token->track($rejected);
 
-            expect($rejected->getReason())->toBeInstanceOf(RuntimeException::class);
-            expect($token->getTrackedCount())->toBe(0);
+            expect($rejected->reason)->toBeInstanceOf(RuntimeException::class);
+            expect($token->trackCount)->toBe(0);
         });
     });
 
@@ -538,19 +538,19 @@ describe('CancellationToken', function () {
             });
 
             $token->track($p1);
-            expect($token->getTrackedCount())->toBe(1);
+            expect($token->trackCount)->toBe(1);
 
             $token->track($p2);
-            expect($token->getTrackedCount())->toBe(2);
+            expect($token->trackCount)->toBe(2);
 
             $token->untrack($p1);
-            expect($token->getTrackedCount())->toBe(1);
+            expect($token->trackCount)->toBe(1);
 
             $token->track($p3);
-            expect($token->getTrackedCount())->toBe(2);
+            expect($token->trackCount)->toBe(2);
 
             $token->clearTracked();
-            expect($token->getTrackedCount())->toBe(0);
+            expect($token->trackCount)->toBe(0);
         });
     });
 

@@ -552,12 +552,12 @@ describe('CancellationTokenSource', function () {
             });
             $linked->token->track($promise);
 
-            expect($linked->token->getTrackedCount())->toBe(1);
+            expect($linked->token->trackCount)->toBe(1);
 
             $cts1->cancel();
 
             expect($promise->isCancelled())->toBeTrue();
-            expect($linked->token->getTrackedCount())->toBe(0);
+            expect($linked->token->trackCount)->toBe(0);
         });
     });
 });
